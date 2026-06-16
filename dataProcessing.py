@@ -3,6 +3,7 @@ import re
 import nltk
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
+from nltk.stem import WordNetLemmatizer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -13,14 +14,32 @@ nltk.download('stopwords', quiet=True)
 print("NLTK 'stopwords' downloaded.")
 nltk.download('punkt_tab')
 print("NLTK 'punkt_tab' downloaded.")
+nltk.download("wordnet", quiet=True)
+print("NLTK 'wordnet' downloaded.")
+nltk.download("omw-1.4", quiet=True)
+print("NLTK 'omw-1.4' downloaded.")
+
 
 STOP_WORDS = set(stopwords.words('english'))
+
+lemmatizer = WordNetLemmatizer()
 
 def clean_text(text):
     if not isinstance(text, str): return ""
     text = text.lower()
     text = re.sub(r'[^\w\s]', '', text)
     tokens = word_tokenize(text)
+    
+    cleaned = []
+
+    for word in tokens:
+        if word not in STOP_WORDS:
+            word = (
+                lemmatizer
+                .lemmatize(word)
+            )
+            cleaned.append(word)
+
     return " ".join([w for w in tokens if w not in STOP_WORDS])
 
 class RecommendationEngine:
@@ -38,11 +57,19 @@ class RecommendationEngine:
         top_indices = scores.argsort()[-top_n:][::-1]
         
         results = []
+
         for idx in top_indices:
-            if scores[idx] > 0:
-                results.append({
-                    "name": self.df.iloc[idx]['Movie Name'],
-                    "plot": self.df.iloc[idx]['Storyline'],
-                    "score": scores[idx]
-                })
+
+            if scores[idx] <= 0:
+                continue
+
+            results.append({
+            "name": self.df.iloc[idx]["Movie Name"],
+            "plot": self.df.iloc[idx]["Storyline"],
+            "score": float(scores[idx])
+            })
+
+            if len(results) == top_n:
+                break
+
         return results

@@ -1,5 +1,6 @@
 import streamlit as st
 from dataProcessing import RecommendationEngine
+from visualizations import plot_recommendations
 
 st.set_page_config(page_title="Movie Match 2024", layout="wide")
 
@@ -29,6 +30,8 @@ try:
                     with st.expander(f"{i}. {movie['name']} (Match: {movie['score']:.2%})"):
                         st.write(f"**Plot:** {movie['plot']}")
                         st.progress(float(movie['score']))
+                fig = plot_recommendations(recs)
+                st.pyplot(fig)
         else:
             st.warning("Please enter some text first.")
 
